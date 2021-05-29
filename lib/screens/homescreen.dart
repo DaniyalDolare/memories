@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 
@@ -157,7 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   max: _endDate!.add(Duration(days: 1)), min: _startDate!)));
       return pathList;
     } else {
-      print("Permission required!");
+      Fluttertoast.showToast(msg: "Permisson required!");
+      PhotoManager.openSetting();
       return [];
     }
   }
@@ -170,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     List<Uint8List> thumbs = [];
     int perPage = 100;
+    // Loop through to the path list from page which aren't loaded i.e from pageCount
     for (var page = pageCount; page <= pageCount; page++) {
       final assets = await pathList[0].getAssetListPaged(page, perPage);
       for (AssetEntity asset in assets) {
@@ -187,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // if next page if empty
     if (thumbList.isEmpty) {
-      print("No more images");
+      Fluttertoast.showToast(msg: "No more images to show");
     } else {
       // add unloaded data from next page to imageList to display
       setState(() {
@@ -200,22 +202,25 @@ class _HomeScreenState extends State<HomeScreen> {
   void loadPhotos() async {
     if (_startDate == null || _endDate == null) {
       // If dates are null, dont load photos
-      print("Pick date first");
+      Fluttertoast.showToast(msg: "Pick date first");
     } else {
       // Else fetch and add thumbnail of photos to the image list
       // Empty the list when there are date changes to avoid incorrect data
       this.imageList = [];
+      // Set page Count to zero again when there are date changes to avoid incorrect data
+      int pgCount = 0;
       this.pathList = await getPathList();
       if (this.pathList.isEmpty) {
-        print("No images to show");
+        Fluttertoast.showToast(msg: "No images to show");
         setState(() {
+          this.pageCount = pgCount;
           this.imageList = [];
         });
       } else {
-        List<Uint8List> thumbList =
-            await getThumbList(this.pathList, this.pageCount);
+        List<Uint8List> thumbList = await getThumbList(this.pathList, pgCount);
 
         setState(() {
+          this.pageCount = pgCount;
           this.imageList = thumbList;
         });
       }
