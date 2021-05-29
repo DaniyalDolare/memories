@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:photo_manager/photo_manager.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -80,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 Center(
                     child: ElevatedButton(
-                        onPressed: () {}, child: Text("Show Photos")))
+                        onPressed: loadPhotos, child: Text("Show Photos")))
               ],
             ),
           ),
@@ -96,5 +97,19 @@ class _HomeScreenState extends State<HomeScreen> {
         firstDate: DateTime(DateTime.now().year - 20),
         lastDate: DateTime.now());
     return date;
+  }
+
+  loadPhotos() async {
+    if (_startDate == null && _endDate == null) {
+      print("Pick date first");
+    } else {
+      var result = await PhotoManager.requestPermissionExtend();
+      if (result.isAuth) {
+        // success
+      } else {
+        // fail
+        /// if result is fail, you can call `PhotoManager.openSetting();`  to open android/ios applicaton's setting to get permission
+      }
+    }
   }
 }
