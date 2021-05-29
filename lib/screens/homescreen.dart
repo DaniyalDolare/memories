@@ -203,15 +203,22 @@ class _HomeScreenState extends State<HomeScreen> {
       print("Pick date first");
     } else {
       // Else fetch and add thumbnail of photos to the image list
-      this.imageList =
-          []; //empty the list when there are date changes to avoid incorrect data
+      // Empty the list when there are date changes to avoid incorrect data
+      this.imageList = [];
       this.pathList = await getPathList();
-      List<Uint8List> thumbList =
-          await getThumbList(this.pathList, this.pageCount);
+      if (this.pathList.isEmpty) {
+        print("No images to show");
+        setState(() {
+          this.imageList = [];
+        });
+      } else {
+        List<Uint8List> thumbList =
+            await getThumbList(this.pathList, this.pageCount);
 
-      setState(() {
-        this.imageList = thumbList;
-      });
+        setState(() {
+          this.imageList = thumbList;
+        });
+      }
     }
   }
 }
