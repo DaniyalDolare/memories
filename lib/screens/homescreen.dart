@@ -6,8 +6,95 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  DateTime? _startDate, _endDate;
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 10.0,
+                ),
+                Text(
+                  "Memories",
+                  style: TextStyle(
+                    fontSize: 30.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "Re-live your travel memories",
+                  style: TextStyle(
+                    fontSize: 16.0,
+                  ),
+                ),
+                SizedBox(
+                  height: 10.0,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: () async {
+                        DateTime? startDate = await pickedDate();
+                        setState(() {
+                          _startDate = startDate;
+                        });
+                      },
+                      child: Text(
+                        _startDate == null
+                            ? "Pick Start Date"
+                            : "${_startDate!.day}-${_startDate!.month}-${_startDate!.year}",
+                        style: TextStyle(
+                            fontSize: 20.0,
+                            color: Colors.black,
+                            decoration: TextDecoration.underline),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        DateTime? endDate = await pickedDate();
+                        setState(() {
+                          _endDate = endDate;
+                        });
+                      },
+                      child: Text(
+                        _endDate == null
+                            ? "Pick End Date"
+                            : "${_endDate!.day}-${_endDate!.month}-${_endDate!.year}",
+                        style: TextStyle(
+                            fontSize: 20.0,
+                            color: Colors.black,
+                            decoration: TextDecoration.underline),
+                      ),
+                    )
+                  ],
+                ),
+                SizedBox(
+                  height: 15.0,
+                ),
+                Center(
+                    child: ElevatedButton(
+                        onPressed: () {}, child: Text("Show Photos")))
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<DateTime?> pickedDate() async {
+    DateTime? date = await showDatePicker(
+        context: context,
+        initialDate: DateTime.now(),
+        firstDate: DateTime(DateTime.now().year - 20),
+        lastDate: DateTime.now());
+    return date;
   }
 }
