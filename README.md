@@ -1,6 +1,6 @@
 # memories
 
-A new Flutter project.
+Memories app is design specially for person who travels a lot so that they can revisit and re-live thier travel memories 
 
 ## Getting Started
 
