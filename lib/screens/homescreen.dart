@@ -121,8 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (imageList.isNotEmpty)
                   Center(
                     child: TextButton(
-                      child: Text("Show more"),
-                      onPressed: addPages,
+                      child: Text("Load more"),
+                      onPressed: loadMore,
                     ),
                   )
               ],
@@ -151,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
       List<AssetPathEntity> pathList = [];
       pathList = await PhotoManager.getAssetPathList(
           onlyAll: true,
-          type: RequestType.image,
+          type: RequestType.common,
           filterOption: FilterOptionGroup(
               createTimeCond: DateTimeCond(
                   max: _endDate!.add(Duration(days: 1)), min: _startDate!)));
@@ -182,14 +182,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return thumbs;
   }
 
-  void addPages() async {
+  void loadMore() async {
     int _pageCount = pageCount + 1;
     // Get thumb list of next page
     List<Uint8List> thumbList = await getThumbList(this.pathList, _pageCount);
 
     // if next page if empty
     if (thumbList.isEmpty) {
-      Fluttertoast.showToast(msg: "No more images to show");
+      Fluttertoast.showToast(msg: "No more images to load");
     } else {
       // add unloaded data from next page to imageList to display
       setState(() {
