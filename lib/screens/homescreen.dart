@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 
@@ -8,6 +10,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   DateTime? _startDate, _endDate;
+  List<Uint8List> imageList = [];
+  List<AssetPathEntity> pathList = [];
+  int pageCount = 0;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,7 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     TextButton(
                       onPressed: () async {
-                        DateTime? startDate = await pickedDate();
+                        DateTime? startDate =
+                            await pickedDate(_startDate ?? DateTime.now());
                         setState(() {
                           _startDate = startDate;
                         });
@@ -59,7 +65,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     TextButton(
                       onPressed: () async {
-                        DateTime? endDate = await pickedDate();
+                        DateTime? endDate =
+                            await pickedDate(_endDate ?? DateTime.now());
                         setState(() {
                           _endDate = endDate;
                         });
@@ -80,8 +87,44 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 15.0,
                 ),
                 Center(
-                    child: ElevatedButton(
-                        onPressed: loadPhotos, child: Text("Show Photos")))
+                  child: ElevatedButton(
+                    onPressed: loadPhotos,
+                    child: Text("Show Photos"),
+                  ),
+                ),
+                SizedBox(
+                  height: 15.0,
+                ),
+                Text(
+                  "Photos:",
+                  style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(
+                  height: 15.0,
+                ),
+                GridView.builder(
+                  physics: NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: imageList.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisSpacing: 10.0,
+                      mainAxisSpacing: 10.0,
+                      crossAxisCount: 4),
+                  itemBuilder: (context, index) => Container(
+                    color: Colors.grey[200],
+                    child: Image.memory(
+                      imageList[index],
+                    ),
+                  ),
+                ),
+                //If no images , then dont display the show more button
+                if (imageList.isNotEmpty)
+                  Center(
+                    child: TextButton(
+                      child: Text("Show more"),
+                      onPressed: addPages,
+                    ),
+                  )
               ],
             ),
           ),
@@ -90,26 +133,85 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<DateTime?> pickedDate() async {
+  Future<DateTime?> pickedDate(DateTime initial) async {
     DateTime? date = await showDatePicker(
         context: context,
-        initialDate: DateTime.now(),
+        initialDate: initial,
         firstDate: DateTime(DateTime.now().year - 20),
-        lastDate: DateTime.now());
+        lastDate: DateTime(DateTime.now().year + 20));
     return date;
   }
 
-  loadPhotos() async {
-    if (_startDate == null && _endDate == null) {
+  Future<List<AssetPathEntity>> getPathList() async {
+    // Request storage permission if not granted
+    var result = await PhotoManager.requestPermissionExtend();
+    if (result.isAuth) {
+      //  Get all of asset list (gallery)
+
+      List<AssetPathEntity> pathList = [];
+      pathList = await PhotoManager.getAssetPathList(
+          onlyAll: true,
+          type: RequestType.image,
+          filterOption: FilterOptionGroup(
+              createTimeCond: DateTimeCond(
+                  max: _endDate!.add(Duration(days: 1)), min: _startDate!)));
+      return pathList;
+    } else {
+      print("Permission required!");
+      return [];
+    }
+  }
+
+  Future<List<Uint8List>> getThumbList(
+      List<AssetPathEntity> pathList, int pageCount) async {
+    // Get asset list from AssetPathEntity in form of thumbnail
+    // page: The page number of the page, starting at 0.
+    // perPage: The number of pages per page.
+
+    List<Uint8List> thumbs = [];
+    int perPage = 100;
+    for (var page = pageCount; page <= pageCount; page++) {
+      final assets = await pathList[0].getAssetListPaged(page, perPage);
+      for (AssetEntity asset in assets) {
+        Uint8List? thumb = await asset.thumbData;
+        thumbs.add(thumb!);
+      }
+    }
+    return thumbs;
+  }
+
+  void addPages() async {
+    int _pageCount = pageCount + 1;
+    // Get thumb list of next page
+    List<Uint8List> thumbList = await getThumbList(this.pathList, _pageCount);
+
+    // if next page if empty
+    if (thumbList.isEmpty) {
+      print("No more images");
+    } else {
+      // add unloaded data from next page to imageList to display
+      setState(() {
+        this.pageCount = pageCount + 1;
+        this.imageList.addAll(thumbList);
+      });
+    }
+  }
+
+  void loadPhotos() async {
+    if (_startDate == null || _endDate == null) {
+      // If dates are null, dont load photos
       print("Pick date first");
     } else {
-      var result = await PhotoManager.requestPermissionExtend();
-      if (result.isAuth) {
-        // success
-      } else {
-        // fail
-        /// if result is fail, you can call `PhotoManager.openSetting();`  to open android/ios applicaton's setting to get permission
-      }
+      // Else fetch and add thumbnail of photos to the image list
+      this.imageList =
+          []; //empty the list when there are date changes to avoid incorrect data
+      this.pathList = await getPathList();
+      List<Uint8List> thumbList =
+          await getThumbList(this.pathList, this.pageCount);
+
+      setState(() {
+        this.imageList = thumbList;
+      });
     }
   }
 }
